@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "extractor"
+description = "extract from score maps"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "GNU General Public License v2.0"}
+authors = [
+    {name = "Marten Chaillet"},
+    {email="martenchaillet@gmail.com"},
+]
+dependencies = [
+    "mrcfile",
+    "numpy",
+    "starfile",
+    "tiler",
+    "torch",
+]
+dynamic = ["version"]
