@@ -2,7 +2,7 @@ import torch.utils.data as data
 import pathlib
 import mrcfile
 import numpy as np
-import numpy.typing as npt
+import torch
 from tiler import Tiler
 
 
@@ -63,7 +63,7 @@ class ScoreData(data.Dataset):
         """
         return sum(self.split)
 
-    def __getitem__(self, idx: int) -> tuple[npt.NDArray[float], npt.NDArray[float]]:
+    def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Parameters
         ----------
@@ -87,7 +87,7 @@ class ScoreData(data.Dataset):
                 break
 
         # indexing numpy array with [None] adds extra channel dimension
-        patch_score = self.tilers[tomo].get_tile(self.score_volumes[tomo], idx)[None]
-        patch_label = self.tilers[tomo].get_tile(self.label_volumes[tomo], idx)[None]
+        patch_score = torch.from_numpy(self.tilers[tomo].get_tile(self.score_volumes[tomo], idx)[None])
+        patch_label = torch.from_numpy(self.tilers[tomo].get_tile(self.label_volumes[tomo], idx)[None])
 
         return patch_score, patch_label
