@@ -1,7 +1,11 @@
 import torch
+import torch.nn.functional as F
 import mrcfile
-import numpy as np
 import numpy.typing as npt
+import argparse
+import pathlib
+from tqdm import tqdm
+from extractor.models import UNet3D
 from tiler import Tiler, Merger
 
 
@@ -11,24 +15,45 @@ def predict(model: torch.nn.Module, data: npt.NDArray[float], batch_size: int = 
     model.eval()
     model.to(device)
 
+    # tomo = torch.from_numpy(data).unsqueeze(dim=0).unsqueeze(dim=0)
+    # print(tomo.shape)
+    # preds = model(tomo)[0]
+    # print(preds.shape)
+
     # does this return the patch size correctly?
     patch_size = next(model.parameters()).size()[0]
 
     tiler = Tiler(
         data_shape=data.shape,
         tile_shape=(patch_size,) * 3,
-        patch_overlap=(patch_size // 2,) * 3,
+        overlap=(patch_size // 2,) * 3,
         mode='reflect'
     )
 
     merger = Merger(tiler, window='hamming')
 
-    for batch_id, batch in tiler(data, batch_size=batch_size):
+    pbar = tqdm(total=tiler.n_tiles)
 
-        # batch to torch Tensor
+    for tile_id, tile in tiler(data):
 
-        # preds back to numpy
+        batch = torch.from_numpy(tile).unsqueeze(dim=0).unsqueeze(dim=0).to(device)
+        prob = F.softmax(model(batch)[0], dim=1)
+        merger.add(tile_id, prob[0, 1].to(torch.device('cpu')).numpy())
 
-        merger.add_batch(batch_id, batch_size, model(batch))
+        pbar.update(1)
+    pbar.close()
 
     return merger.merge(unpad=True)
+
+
+def entry_point():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--score-map', type=pathlib.Path, required=True)
+    parser.add_argument('--output', type=pathlib.Path, required=True)
+    parser.add_argument('--model', type=pathlib.Path, required=True)
+    args = parser.parse_args()
+    data = mrcfile.read(args.score_map)  # also read voxel_size
+    model = UNet3D(in_channels=1, out_channels=2)
+    model.load_state_dict(torch.load(args.model))
+    result = predict(model, data, batch_size=2, device=torch.device('cuda:0'))
+    mrcfile.write(args.output, result, voxel_size=10, overwrite=True)
