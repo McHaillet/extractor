@@ -31,7 +31,7 @@ class ScoreData(data.Dataset):
         """
         self.path = path
         # viable tomo_ids that have both a _scores and _gt MRC are stored in self.tomo_ids
-        tomo_ids = [p.name.strip('_scores.mrc') for p in self.path.iterdir() if p.name.endswith('_scores.mrc')]
+        tomo_ids = [p.name.replace('_scores.mrc', '') for p in self.path.iterdir() if p.name.endswith('_scores.mrc')]
         self.tomo_ids = [tid for tid in tomo_ids if self.path.joinpath(tid + '_gt.mrc').exists()]
         self.tomo_count = len(self.tomo_ids)
 
