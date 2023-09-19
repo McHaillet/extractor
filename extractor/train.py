@@ -89,6 +89,7 @@ def entry_point():
     parser.add_argument('--log-file', type=pathlib.Path, required=True)
     parser.add_argument('--batch-size', type=int, required=False, default=8)
     parser.add_argument('--epochs', type=int, required=False, default=100)
+    parser.add_argument('--gpu-id', type=int, required=False)
     args = parser.parse_args()
 
     logging.basicConfig(filename=args.log_file, encoding='utf-8', level=logging.DEBUG)
@@ -111,7 +112,7 @@ def entry_point():
         train_data_loader,
         val_data_loader,
         num_epochs=args.epochs,
-        device=torch.device('cuda:0')
+        device=torch.device(f'cuda:{args.gpu_id}') if args.gpu_id is not None else torch.device('cpu')
     )
 
     torch.save(model.state_dict(), args.output_dir.joinpath('model.pth'))
