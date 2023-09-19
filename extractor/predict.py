@@ -51,7 +51,7 @@ def entry_point():
     parser.add_argument('--score-map', type=pathlib.Path, required=True)
     parser.add_argument('--output', type=pathlib.Path, required=True)
     parser.add_argument('--model', type=pathlib.Path, required=True)
-    parser.add_argument('--gpu-id, type=int, required=False)
+    parser.add_argument('--gpu-id', type=int, required=False)
     args = parser.parse_args()
     data = mrcfile.read(args.score_map)  # also read voxel_size
     model = UNet3D(in_channels=1, out_channels=2)
