@@ -51,9 +51,15 @@ def entry_point():
     parser.add_argument('--score-map', type=pathlib.Path, required=True)
     parser.add_argument('--output', type=pathlib.Path, required=True)
     parser.add_argument('--model', type=pathlib.Path, required=True)
+    parser.add_argument('--gpu-id, type=int, required=False)
     args = parser.parse_args()
     data = mrcfile.read(args.score_map)  # also read voxel_size
     model = UNet3D(in_channels=1, out_channels=2)
     model.load_state_dict(torch.load(args.model))
-    result = predict(model, data, batch_size=2, device=torch.device('cuda:0'))
+    result = predict(
+        model, 
+        data, 
+        batch_size=2, 
+        device=torch.device(f'cuda:{args.gpu_id}') if gpu_id is not None else torch.device('cpu')
+    )
     mrcfile.write(args.output, result, voxel_size=10, overwrite=True)
