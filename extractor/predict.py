@@ -60,6 +60,6 @@ def entry_point():
         model, 
         data, 
         batch_size=2, 
-        device=torch.device(f'cuda:{args.gpu_id}') if gpu_id is not None else torch.device('cpu')
+        device=torch.device(f'cuda:{args.gpu_id}') if args.gpu_id is not None else torch.device('cpu')
     )
     mrcfile.write(args.output, result, voxel_size=10, overwrite=True)
