@@ -16,7 +16,8 @@ def train_model(
         train_loader,
         val_loader,
         num_epochs=100,
-        device=torch.device('cpu')
+        device=torch.device('cpu'),
+        output_dir=None
 ):
     # Set model to train mode and move to device
     model.train()
@@ -79,6 +80,9 @@ def train_model(
 
         logging.info(f'epoch {epoch}: validation loss {validation_loss / len(val_loader)}')
 
+        if output_dir is not None and epoch % 10 == 0 and epoch > 0:
+            torch.save(model.state_dict(), output_dir.joinpath(f'model_epoch-{epoch}.pth'))
+
 
 def entry_point():
 
@@ -112,8 +116,9 @@ def entry_point():
         train_data_loader,
         val_data_loader,
         num_epochs=args.epochs,
-        device=torch.device(f'cuda:{args.gpu_id}') if args.gpu_id is not None else torch.device('cpu')
+        device=torch.device(f'cuda:{args.gpu_id}') if args.gpu_id is not None else torch.device('cpu'),
+        output_dir=args.output_dir
     )
 
-    torch.save(model.state_dict(), args.output_dir.joinpath('model.pth'))
+    torch.save(model.state_dict(), args.output_dir.joinpath('model_final.pth'))
 
