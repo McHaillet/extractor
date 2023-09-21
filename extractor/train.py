@@ -34,7 +34,7 @@ def train_model(
             data_labels = data_labels.to(device)
 
             # calculate predictions
-            preds = model(data_inputs)[0]  # returns a list for some reason
+            preds = model(data_inputs)
 
             # determine loss
             loss = loss_module(preds, data_labels)
@@ -66,7 +66,7 @@ def train_model(
                 data_labels = data_labels.to(device)
 
                 # calculate predictions
-                preds = model(data_inputs)[0]
+                preds = model(data_inputs)
 
                 # determine loss
                 loss = loss_module(preds, data_labels)

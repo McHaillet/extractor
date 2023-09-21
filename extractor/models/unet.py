@@ -50,9 +50,9 @@ class UNet2D(nn.Module):
             x_dec.append(dec_layer(x_cat))
 
         if not return_all:
-            return [x_dec[-1]]
+            return x_dec[-1]
         else:
-            return [x_enc + x_dec]
+            return x_enc + x_dec
 
     def num_params(self):
         count = 0
@@ -105,9 +105,9 @@ class UNet3D(nn.Module):
             x_dec.append(dec_layer(x_cat))
 
         if not return_all:
-            return [x_dec[-1]]
+            return x_dec[-1]
         else:
-            return [x_enc + x_dec]
+            return x_enc + x_dec
 
     def num_params(self):
         count = 0
