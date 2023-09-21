@@ -355,7 +355,7 @@ class Decoder3D(nn.Module):
 
 
 class Last3D(nn.Module):
-    def __init__(self, in_channels, middle_channels, out_channels, softmax=False):
+    def __init__(self, in_channels, middle_channels, out_channels):
         super(Last3D, self).__init__()
 
         layers = [
