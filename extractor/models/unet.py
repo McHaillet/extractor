@@ -63,7 +63,8 @@ class UNet2D(nn.Module):
 
 # 3D reference U-Net implementation
 class UNet3D(nn.Module):
-    def __init__(self, in_channels, out_channels, filters=(64, 128, 256, 512, 1024)):
+    def __init__(self, in_channels, out_channels, filters=(64, 128, 256, 512, 1024),
+                 dropout=False):
         assert len(filters) > 2, 'filters must have at least 3 members'
 
         super(UNet3D, self).__init__()
@@ -75,19 +76,20 @@ class UNet3D(nn.Module):
 
         # defining encoder layers
         encoder_layers = []
-        encoder_layers.append(First3D(in_channels, filters[0], filters[0]))
-        encoder_layers.extend([Encoder3D(filters[i], filters[i + 1], filters[i + 1])
+        encoder_layers.append(First3D(in_channels, filters[0], filters[0], dropout=dropout))
+        encoder_layers.extend([Encoder3D(filters[i], filters[i + 1], filters[i + 1], dropout=dropout)
                                for i in range(len(filters)-2)])
 
         # defining decoder layers
         decoder_layers = []
-        decoder_layers.extend([Decoder3D(2 * filters[i + 1], 2 * filters[i], 2 * filters[i], filters[i])
+        decoder_layers.extend([Decoder3D(2 * filters[i + 1], 2 * filters[i], 2 * filters[i], filters[i],
+                                         dropout=dropout)
                                for i in reversed(range(len(filters)-2))])
         decoder_layers.append(Last3D(filters[1], filters[0], out_channels))
 
         # encoder, center and decoder layers
         self.encoder_layers = nn.Sequential(*encoder_layers)
-        self.center = Center3D(filters[-2], filters[-1], filters[-1], filters[-2])
+        self.center = Center3D(filters[-2], filters[-1], filters[-1], filters[-2], dropout=dropout)
         self.decoder_layers = nn.Sequential(*decoder_layers)
 
     def forward(self, x, return_all=False):

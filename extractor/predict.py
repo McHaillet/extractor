@@ -60,7 +60,7 @@ def entry_point():
     parser.add_argument('--gpu-id', type=int, required=False)
     args = parser.parse_args()
     data = mrcfile.read(args.score_map)  # also read voxel_size
-    model = UNet3D(in_channels=1, out_channels=2)
+    model = UNet3D(in_channels=1, out_channels=2, dropout=0.2)
     model.load_state_dict(torch.load(args.model))
     result = predict(
         model, 
