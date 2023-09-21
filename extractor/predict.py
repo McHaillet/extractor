@@ -4,6 +4,7 @@ import mrcfile
 import numpy.typing as npt
 import argparse
 import pathlib
+import numpy as np
 from tqdm import tqdm
 from extractor.models import UNet3D
 from tiler import Tiler, Merger
@@ -51,6 +52,11 @@ def entry_point():
     parser.add_argument('--score-map', type=pathlib.Path, required=True)
     parser.add_argument('--output', type=pathlib.Path, required=True)
     parser.add_argument('--model', type=pathlib.Path, required=True)
+    parser.add_argument('--confidence', type=float, required=False, default=True,
+                        help='How confident the predictions should be, expressed as probability. A value close to 1 '
+                             'allows only very confident predictions, values closer to 0 will select more points at '
+                             'the expense of increasing false positives. The default is 0.5 ')
+    parser.add_argument('--voxel-size', type=float, required=True)
     parser.add_argument('--gpu-id', type=int, required=False)
     args = parser.parse_args()
     data = mrcfile.read(args.score_map)  # also read voxel_size
@@ -62,4 +68,6 @@ def entry_point():
         batch_size=2, 
         device=torch.device(f'cuda:{args.gpu_id}') if args.gpu_id is not None else torch.device('cpu')
     )
-    mrcfile.write(args.output, result, voxel_size=10, overwrite=True)
+    binary_result = np.zeros_like(result)
+    binary_result[result > args.confidence] = 1
+    mrcfile.write(args.output, binary_result, voxel_size=args.voxel_size, overwrite=True)
