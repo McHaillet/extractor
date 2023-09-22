@@ -20,6 +20,16 @@ def expand_as_one_hot(input, C, ignore_index=None):
 
 class TverskyLoss(nn.Module):
     def __init__(self, classes: int, alpha: float = 0.5, beta: float = 0.5):
+        """
+        Increasing beta weighs recall higher than precision, as beta controls the 
+        penalty on FNs. This makes labeling a true positive as a negative more wrong. 
+
+        alpha + beta = 1 creates the set of F_beta scores, whereas alpha = beta = 0.5
+        is the dice coefficient, also F1 score. (F_beta is harmonic mean of precision
+        and recall)
+
+        Tversky loss paper: https://arxiv.org/abs/1706.05721
+        """
         super(TverskyLoss, self).__init__()
         self.alpha = alpha
         self.beta = beta
