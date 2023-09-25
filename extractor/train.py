@@ -99,8 +99,8 @@ def entry_point():
 
     logging.basicConfig(filename=args.log_file, encoding='utf-8', level=logging.DEBUG)
 
-    train_dataset = ScoreData(args.train_data)
-    validation_dataset = ScoreData(args.val_data)
+    train_dataset = ScoreData(args.train_data, patch_size=64, patch_overlap=32)
+    validation_dataset = ScoreData(args.val_data, patch_size=64, patch_overlap=32)
 
     train_data_loader = data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     val_data_loader = data.DataLoader(validation_dataset, batch_size=args.batch_size, shuffle=False)

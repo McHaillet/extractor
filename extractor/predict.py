@@ -22,7 +22,7 @@ def predict(model: torch.nn.Module, data: npt.NDArray[float], batch_size: int = 
     # print(preds.shape)
 
     # does this return the patch size correctly?
-    patch_size = next(model.parameters()).size()[0]
+    patch_size = 64
 
     tiler = Tiler(
         data_shape=data.shape,
