@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from typing import Union
 
 
 # Reference U-Nets
@@ -63,8 +64,9 @@ class UNet2D(nn.Module):
 
 # 3D reference U-Net implementation
 class UNet3D(nn.Module):
-    def __init__(self, in_channels, out_channels, filters=(64, 128, 256, 512, 1024),
-                 dropout=False):
+    def __init__(self, in_channels: int, out_channels: int,
+                 filters: tuple[int, ...] = (16, 32, 64),  # reduced params, before was: (64, 128, 256, 512, 1024)
+                 dropout: Union[bool, float] = False):
         assert len(filters) > 2, 'filters must have at least 3 members'
 
         super(UNet3D, self).__init__()

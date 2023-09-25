@@ -104,7 +104,7 @@ def entry_point():
     train_data_loader = data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     val_data_loader = data.DataLoader(validation_dataset, batch_size=args.batch_size, shuffle=False)
 
-    model = UNet3D(in_channels=1, out_channels=2, dropout=0.2)
+    model = UNet3D(in_channels=1, out_channels=2)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
     loss_module = TverskyLoss(classes=2)
