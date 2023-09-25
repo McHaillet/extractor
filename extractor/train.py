@@ -1,12 +1,20 @@
 import torch
 import torch.utils.data as data
+import torch.distributed as dist
 import logging
 import pathlib
 import argparse
+import os
 from extractor.models import UNet3D
 from extractor.data import ScoreData
 from extractor.loss import TverskyLoss
 from tqdm import tqdm
+
+
+def setup(rank, world_size):
+    os.environ['MASTER_ADDR'] = 'localhost'
+    os.environ['MASTER_PORT'] = '12355'
+    dist.init_process_group("nccl", rank=rank, world_size=world_size)
 
 
 def train_model(
