@@ -5,16 +5,45 @@ import logging
 import pathlib
 import argparse
 import os
+from torch.utils.data.distributed import DistributedSampler
 from extractor.models import UNet3D
 from extractor.data import ScoreData
 from extractor.loss import TverskyLoss
 from tqdm import tqdm
 
 
+# def prepare(rank, world_size, batch_size=32, pin_memory=False, num_workers=0):
+#     dataset = Your_Dataset()
+#     sampler = DistributedSampler(dataset, num_replicas=world_size, rank=rank, shuffle=False, drop_last=False)
+#
+#     dataloader = DataLoader(dataset, batch_size=batch_size, pin_memory=pin_memory, num_workers=num_workers,
+#                             drop_last=False, shuffle=False, sampler=sampler)
+#
+#     return dataloader
+
+
 def setup(rank, world_size):
     os.environ['MASTER_ADDR'] = 'localhost'
     os.environ['MASTER_PORT'] = '12355'
     dist.init_process_group("nccl", rank=rank, world_size=world_size)
+
+
+def prepare(
+        training_data_path: pathlib.Path,
+        validation_data_path: pathlib.Path,
+        rank: int,
+        world_size: int,
+        batch_size: int,
+        pin_memory: bool = False,
+        num_workers: int = 0
+) -> tuple[data.DataLoader, data.DataLoader]:
+    # train_data = ScoreData(args.train_data)
+    # validation_dataset = ScoreData(args.val_data)
+    pass
+
+
+def cleanup():
+    dist.destroy_process_group()
 
 
 def train_model(
