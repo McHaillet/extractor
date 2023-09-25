@@ -11,7 +11,6 @@ from tqdm import tqdm
 
 def train_model(
         model,
-        optimizer,
         loss_module,
         train_loader,
         val_loader,
@@ -22,6 +21,8 @@ def train_model(
     # Set model to train mode and move to device
     model.train()
     model.to(device)
+
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
 
     # Training loop
     for epoch in range(num_epochs):
@@ -105,13 +106,11 @@ def entry_point():
     val_data_loader = data.DataLoader(validation_dataset, batch_size=args.batch_size, shuffle=False)
 
     model = UNet3D(in_channels=1, out_channels=2)
-
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+    
     loss_module = TverskyLoss(classes=2)
 
     train_model(
         model,
-        optimizer,
         loss_module,
         train_data_loader,
         val_data_loader,
