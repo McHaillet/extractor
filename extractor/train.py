@@ -181,7 +181,6 @@ def entry_point():
             args.gpus,
             args.train_data,
             args.val_fraction,
-            args.output_dir,
             args.batch_size,
             args.epochs,
             args.output_dir,
