@@ -66,6 +66,8 @@ def train_model(
         num_epochs: int,
         output_dir: pathlib.Path
 ):
+    setup(rank, world_size)
+
     # Set model to train mode and move to device
     model = UNet3D(in_channels=1, out_channels=2)
     model.train()
