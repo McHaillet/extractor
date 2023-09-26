@@ -72,7 +72,7 @@ def train_model(
     model = UNet3D(in_channels=1, out_channels=2)
     model.train()
     model.to(rank)
-    model = DistributedDataParallel(model, device_ids=[rank], output_device=rank, find_unused_parameters=True)
+    model = DistributedDataParallel(model, device_ids=[rank])
 
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
     loss_module = TverskyLoss(classes=2)
