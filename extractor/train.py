@@ -88,7 +88,10 @@ def train_model(
         val_loader.sampler.set_epoch(epoch)
 
         training_loss = 0.0
-        pbar = tqdm(total=len(train_loader))
+
+        if rank == 0:
+            pbar = tqdm(total=len(train_loader))
+
         for i, (data_inputs, data_labels) in enumerate(train_loader):
 
             # move data to GPU
@@ -112,14 +115,18 @@ def train_model(
             # take the running average of the loss
             training_loss += loss.item()
 
-            if i % 10 == 0:
+            if rank == 0 and i % 10 == 0:
                 pbar.update(10)
-        pbar.close()
+        if rank == 0:
+            pbar.close()
 
-        logging.info(f'epoch {epoch}: training loss {training_loss / len(train_loader)}')
+        logging.info(f'[epoch - {epoch + 1}/{num_epochs}; rank - {rank}; loss - '
+                     f' {training_loss / len(train_loader)}]')
 
         validation_loss = 0.0
-        pbar = tqdm(total=len(val_loader))
+
+        if rank == 0:
+            pbar = tqdm(total=len(val_loader))
         # loss should also be evaluated on the validation data so that we can compare training loss and validation loss
         with torch.no_grad():
             for i, (data_inputs, data_labels) in enumerate(val_loader):
@@ -135,17 +142,22 @@ def train_model(
 
                 validation_loss += loss.item()
 
-                if i % 10 == 0:
+                if rank == 0 and i % 10 == 0:
                     pbar.update(10)
 
-        pbar.close()
+        if rank == 0:
+            pbar.close()
 
-        logging.info(f'epoch {epoch}: validation loss {validation_loss / len(val_loader)}')
+        logging.info(f'[epoch - {epoch + 1}/{num_epochs}; rank - {rank}; loss - '
+                     f' {validation_loss / len(val_loader)}]')
 
-        if epoch % 10 == 0 and epoch > 0:
+        if rank == 0 and epoch % 10 == 0 and epoch > 0:
             torch.save(model.state_dict(), output_dir.joinpath(f'model_epoch-{epoch}.pth'))
 
-    torch.save(model.state_dict(), output_dir.joinpath('model_final.pth'))
+    if rank == 0:
+        torch.save(model.state_dict(), output_dir.joinpath('model_final.pth'))
+
+    cleanup()
 
 
 def entry_point():
