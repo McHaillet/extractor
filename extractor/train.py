@@ -1,45 +1,56 @@
+# torch imports
 import torch
 import torch.utils.data as data
 import torch.distributed as dist
+import torch.multiprocessing as mp
+from torch.nn.parallel import DistributedDataParallel
+
+# other
 import logging
 import pathlib
 import argparse
 import os
-from torch.utils.data.distributed import DistributedSampler
 from extractor.models import UNet3D
 from extractor.data import ScoreData
 from extractor.loss import TverskyLoss
 from tqdm import tqdm
 
 
-# def prepare(rank, world_size, batch_size=32, pin_memory=False, num_workers=0):
-#     dataset = Your_Dataset()
-#     sampler = DistributedSampler(dataset, num_replicas=world_size, rank=rank, shuffle=False, drop_last=False)
-#
-#     dataloader = DataLoader(dataset, batch_size=batch_size, pin_memory=pin_memory, num_workers=num_workers,
-#                             drop_last=False, shuffle=False, sampler=sampler)
-#
-#     return dataloader
-
-
-def setup(rank, world_size):
+def setup(
+        rank: int,
+        world_size: int
+):
     os.environ['MASTER_ADDR'] = 'localhost'
     os.environ['MASTER_PORT'] = '12355'
     dist.init_process_group("nccl", rank=rank, world_size=world_size)
 
 
 def prepare(
-        training_data_path: pathlib.Path,
-        validation_data_path: pathlib.Path,
+        dataset: ScoreData,
         rank: int,
         world_size: int,
         batch_size: int,
         pin_memory: bool = False,
         num_workers: int = 0
-) -> tuple[data.DataLoader, data.DataLoader]:
-    # train_data = ScoreData(args.train_data)
-    # validation_dataset = ScoreData(args.val_data)
-    pass
+) -> data.DataLoader:
+
+    sampler = data.distributed.DistributedSampler(
+        dataset,
+        num_replicas=world_size,
+        rank=rank,
+        shuffle=True,
+        drop_last=True
+    )
+
+    return data.DataLoader(
+        dataset,
+        batch_size=batch_size,
+        pin_memory=pin_memory,
+        num_workers=num_workers,
+        drop_last=True,
+        shuffle=False,
+        sampler=sampler
+    )
 
 
 def cleanup():
@@ -47,29 +58,42 @@ def cleanup():
 
 
 def train_model(
-        model,
-        loss_module,
-        train_loader,
-        val_loader,
-        num_epochs=100,
-        device=torch.device('cpu'),
-        output_dir=None
+        rank: int,
+        world_size: int,
+        train_data_path: pathlib.Path,
+        val_fraction: float,
+        batch_size: int,
+        num_epochs: int,
+        output_dir: pathlib.Path
 ):
     # Set model to train mode and move to device
+    model = UNet3D(in_channels=1, out_channels=2)
     model.train()
-    model.to(device)
+    model.to(rank)
+    model = DistributedDataParallel(model, device_ids=[rank], output_device=rank, find_unused_parameters=True)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+    loss_module = TverskyLoss(classes=2)
+
+    dataset = ScoreData(train_data_path, patch_size=64, patch_overlap=32)
+    train_dataset, validation_dataset = data.random_split(dataset, [1 - val_fraction, val_fraction])
+
+    train_loader = prepare(train_dataset, rank, world_size, batch_size)
+    val_loader = prepare(validation_dataset, rank, world_size, batch_size)
 
     # Training loop
     for epoch in range(num_epochs):
+
+        train_loader.sampler.set_epoch(epoch)
+        val_loader.sampler.set_epoch(epoch)
+
         training_loss = 0.0
         pbar = tqdm(total=len(train_loader))
         for i, (data_inputs, data_labels) in enumerate(train_loader):
 
             # move data to GPU
-            data_inputs = data_inputs.to(device)
-            data_labels = data_labels.to(device)
+            data_inputs = data_inputs.to(rank)
+            data_labels = data_labels.to(rank)
 
             # calculate predictions
             preds = model(data_inputs)
@@ -100,8 +124,8 @@ def train_model(
         with torch.no_grad():
             for i, (data_inputs, data_labels) in enumerate(val_loader):
                 # move data to GPU
-                data_inputs = data_inputs.to(device)
-                data_labels = data_labels.to(device)
+                data_inputs = data_inputs.to(rank)
+                data_labels = data_labels.to(rank)
 
                 # calculate predictions
                 preds = model(data_inputs)
@@ -118,43 +142,38 @@ def train_model(
 
         logging.info(f'epoch {epoch}: validation loss {validation_loss / len(val_loader)}')
 
-        if output_dir is not None and epoch % 10 == 0 and epoch > 0:
+        if epoch % 10 == 0 and epoch > 0:
             torch.save(model.state_dict(), output_dir.joinpath(f'model_epoch-{epoch}.pth'))
+
+    torch.save(model.state_dict(), output_dir.joinpath('model_final.pth'))
 
 
 def entry_point():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--train-data', type=pathlib.Path, required=True)
-    parser.add_argument('--val-data', type=pathlib.Path, required=True)
+    parser.add_argument('--val-fraction', type=float, required=True)
     parser.add_argument('--output-dir', type=pathlib.Path, required=True)
     parser.add_argument('--log-file', type=pathlib.Path, required=True)
     parser.add_argument('--batch-size', type=int, required=False, default=8)
     parser.add_argument('--epochs', type=int, required=False, default=100)
-    parser.add_argument('--gpu-id', type=int, required=False)
+    parser.add_argument('--gpus', type=int, required=True, default=1,
+                        help='number of gpus to train on, assumes gpus have been set via CUDA_VISIBLE_DEVICES')
     args = parser.parse_args()
 
     logging.basicConfig(filename=args.log_file, encoding='utf-8', level=logging.DEBUG)
 
-    train_dataset = ScoreData(args.train_data, patch_size=64, patch_overlap=32)
-    validation_dataset = ScoreData(args.val_data, patch_size=64, patch_overlap=32)
-
-    train_data_loader = data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
-    val_data_loader = data.DataLoader(validation_dataset, batch_size=args.batch_size, shuffle=False)
-
-    model = UNet3D(in_channels=1, out_channels=2)
-    
-    loss_module = TverskyLoss(classes=2)
-
-    train_model(
-        model,
-        loss_module,
-        train_data_loader,
-        val_data_loader,
-        num_epochs=args.epochs,
-        device=torch.device(f'cuda:{args.gpu_id}') if args.gpu_id is not None else torch.device('cpu'),
-        output_dir=args.output_dir
+    mp.spawn(
+        train_model,
+        args=(
+            args.gpus,
+            args.train_data,
+            args.val_fraction,
+            args.output_dir,
+            args.batch_size,
+            args.epochs,
+            args.output_dir,
+        ),
+        nprocs=args.gpus
     )
-
-    torch.save(model.state_dict(), args.output_dir.joinpath('model_final.pth'))
 
