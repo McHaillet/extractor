@@ -74,7 +74,6 @@ def train_model(
 
     # Set model to train mode and move to device
     model = UNet3D(in_channels=1, out_channels=2).to(rank)
-    model.train()
     model = DistributedDataParallel(model, device_ids=[rank])
 
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
@@ -99,6 +98,9 @@ def train_model(
 
         for i, (data_inputs, data_labels) in enumerate(train_loader):
 
+            # set gradients to zero after previous batch
+            optimizer.zero_grad()
+
             # move data to GPU
             data_inputs = data_inputs.to(rank)
             data_labels = data_labels.to(rank)
@@ -108,9 +110,7 @@ def train_model(
 
             # determine loss
             loss = loss_module(preds, data_labels)
-
-            # set gradients to zero after previous batch
-            optimizer.zero_grad()
+            
             # perform backpropagation
             loss.backward()
 
