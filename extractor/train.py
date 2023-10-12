@@ -73,9 +73,8 @@ def train_model(
     setup(rank, world_size)
 
     # Set model to train mode and move to device
-    model = UNet3D(in_channels=1, out_channels=2)
+    model = UNet3D(in_channels=1, out_channels=2).to(rank)
     model.train()
-    model.to(rank)
     model = DistributedDataParallel(model, device_ids=[rank])
 
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
