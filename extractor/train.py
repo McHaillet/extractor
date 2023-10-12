@@ -64,8 +64,12 @@ def train_model(
         val_fraction: float,
         batch_size: int,
         num_epochs: int,
-        output_dir: pathlib.Path
+        output_dir: pathlib.Path,
+        log_file: pathlib.Path
 ):
+    if rank == 0:
+        logging.basicConfig(filename=log_file, encoding='utf-8', level=logging.DEBUG)
+
     setup(rank, world_size)
 
     # Set model to train mode and move to device
@@ -119,11 +123,12 @@ def train_model(
 
             if rank == 0 and i % 10 == 0:
                 pbar.update(10)
+
         if rank == 0:
             pbar.close()
 
-        logging.info(f'[epoch - {epoch + 1}/{num_epochs}; rank - {rank}; loss - '
-                     f' {training_loss / len(train_loader)}]')
+            logging.info(f'[epoch - {epoch + 1}/{num_epochs}; rank - {rank}; training loss - '
+                         f' {training_loss / len(train_loader)}]')
 
         validation_loss = 0.0
 
@@ -150,8 +155,8 @@ def train_model(
         if rank == 0:
             pbar.close()
 
-        logging.info(f'[epoch - {epoch + 1}/{num_epochs}; rank - {rank}; loss - '
-                     f' {validation_loss / len(val_loader)}]')
+            logging.info(f'[epoch - {epoch + 1}/{num_epochs}; rank - {rank}; validation loss - '
+                         f' {validation_loss / len(val_loader)}]')
 
         if rank == 0 and epoch % 10 == 0 and epoch > 0:
             torch.save(model.state_dict(), output_dir.joinpath(f'model_epoch-{epoch}.pth'))
@@ -175,8 +180,6 @@ def entry_point():
                         help='number of gpus to train on, assumes gpus have been set via CUDA_VISIBLE_DEVICES')
     args = parser.parse_args()
 
-    logging.basicConfig(filename=args.log_file, encoding='utf-8', level=logging.DEBUG)
-
     mp.spawn(
         train_model,
         args=(
@@ -186,6 +189,7 @@ def entry_point():
             args.batch_size,
             args.epochs,
             args.output_dir,
+            args.log_file,
         ),
         nprocs=args.gpus
     )
