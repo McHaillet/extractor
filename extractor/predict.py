@@ -5,6 +5,7 @@ import numpy.typing as npt
 import argparse
 import pathlib
 import numpy as np
+import re
 from tqdm import tqdm
 from extractor.models import UNet3D
 from tiler import Tiler, Merger
