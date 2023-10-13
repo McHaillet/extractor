@@ -66,7 +66,7 @@ def entry_point():
     parser.add_argument('--score-map', type=pathlib.Path, required=True)
     parser.add_argument('--output', type=pathlib.Path, required=True)
     parser.add_argument('--model', type=pathlib.Path, required=True)
-    parser.add_argument('--confidence', type=float, required=False, default=True,
+    parser.add_argument('--confidence', type=float, required=False, default=0.5,
                         help='How confident the predictions should be, expressed as probability. A value close to 1 '
                              'allows only very confident predictions, values closer to 0 will select more points at '
                              'the expense of increasing false positives. The default is 0.5 ')
