@@ -10,6 +10,18 @@ from extractor.models import UNet3D
 from tiler import Tiler, Merger
 
 
+def parse_dpp_model(state_dict):
+    # in case we load a DDP model checkpoint to a non-DDP model
+    model_dict = OrderedDict()
+    pattern = re.compile('module.')
+    for k,v in state_dict.items():
+        if re.search("module", k):
+            model_dict[re.sub(pattern, '', k)] = v
+        else:
+            model_dict = state_dict
+    return model_dict
+
+
 @torch.no_grad()
 def predict(model: torch.nn.Module, data: npt.NDArray[float], batch_size: int = 10, device=torch.device('cpu')):
     # set model to eval and move to device
@@ -61,7 +73,11 @@ def entry_point():
     args = parser.parse_args()
     data = mrcfile.read(args.score_map)  # also read voxel_size
     model = UNet3D(in_channels=1, out_channels=2)
-    model.load_state_dict(torch.load(args.model))
+    try:  # load model but remove state in case the state dict is from a DPP trained model
+        model.load_state_dict(torch.load(args.model))
+    except RuntimeError:
+        model.load_state_dict(parse_dpp_model(torch.load(args.model)))
+    
     result = predict(
         model, 
         data, 
