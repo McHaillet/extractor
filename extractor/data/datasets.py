@@ -88,6 +88,7 @@ class ScoreData(data.Dataset):
 
         # indexing numpy array with [None] adds extra channel dimension
         patch_score = torch.from_numpy(self.tilers[tomo].get_tile(self.score_volumes[tomo], idx)[None])
+        patch_score = (patch_score - patch_score.min()) / (patch_score.max() - patch_score.min())
         patch_label = torch.from_numpy(self.tilers[tomo].get_tile(self.label_volumes[tomo], idx)[None]).long()
 
         return patch_score, patch_label
