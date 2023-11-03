@@ -24,3 +24,4 @@ dynamic = ["version"]
 [project.scripts]
 extractor-train = "extractor.train:entry_point"
 extractor-infer = "extractor.predict:entry_point"
+generate-annotation = "extractor.annotate:entry_point"
