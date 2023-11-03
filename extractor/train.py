@@ -63,6 +63,8 @@ def train_model(
         train_data_path: pathlib.Path,
         val_fraction: float,
         batch_size: int,
+        loss_alpha: float,
+        loss_beta: float,
         num_epochs: int,
         output_dir: pathlib.Path,
         log_file: pathlib.Path
@@ -77,7 +79,7 @@ def train_model(
     model = DistributedDataParallel(model, device_ids=[rank])
 
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
-    loss_module = TverskyLoss(classes=2)
+    loss_module = TverskyLoss(classes=2, alpha=loss_alpha, beta=loss_beta)
 
     dataset = ScoreData(train_data_path, patch_size=64, patch_overlap=32)
     train_dataset, validation_dataset = data.random_split(dataset, [1 - val_fraction, val_fraction])
@@ -174,6 +176,8 @@ def entry_point():
     parser.add_argument('--output-dir', type=pathlib.Path, required=True)
     parser.add_argument('--log-file', type=pathlib.Path, required=True)
     parser.add_argument('--batch-size', type=int, required=False, default=8)
+    parser.add_argument('--loss-alpha', type=float, required=False, default=0.5)
+    parser.add_argument('--loss-beta', type=float, required=False, default=0.5)
     parser.add_argument('--epochs', type=int, required=False, default=100)
     parser.add_argument('--gpus', type=int, required=True, default=1,
                         help='number of gpus to train on, assumes gpus have been set via CUDA_VISIBLE_DEVICES')
@@ -186,6 +190,8 @@ def entry_point():
             args.train_data,
             args.val_fraction,
             args.batch_size,
+            args.loss_alpha,
+            args.loss_beta,
             args.epochs,
             args.output_dir,
             args.log_file,
