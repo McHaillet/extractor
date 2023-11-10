@@ -38,8 +38,7 @@ class TverskyLoss(nn.Module):
 
     def forward(self, y_pred, y_true):
 
-        if self.cl != 1:
-            y_true_onehot = expand_as_one_hot(y_true, C=self.cl).float()
+        y_true_onehot = expand_as_one_hot(y_true, C=self.cl).float() if self.cl != 1 else y_true.float()
 
         prob = F.softmax(y_pred, dim=1)
 
