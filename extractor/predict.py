@@ -7,7 +7,7 @@ import pathlib
 import numpy as np
 import re
 from tqdm import tqdm
-from extractor.models import UNet3D
+from extractor.models import UNet3D, PeakFinder
 from tiler import Tiler, Merger
 from collections import OrderedDict
 
@@ -54,7 +54,7 @@ def predict(model: torch.nn.Module, data: npt.NDArray[float], batch_size: int = 
         tile = (tile - tile.min()) / (tile.max() - tile.min())
         batch = torch.from_numpy(tile).unsqueeze(dim=0).unsqueeze(dim=0).to(device)
         prob = F.softmax(model(batch), dim=1)
-        merger.add(tile_id, prob[0, 1].to(torch.device('cpu')).numpy())
+        merger.add(tile_id, prob[0, 0].to(torch.device('cpu')).numpy())
 
         pbar.update(1)
     pbar.close()
@@ -75,7 +75,7 @@ def entry_point():
     parser.add_argument('--gpu-id', type=int, required=False)
     args = parser.parse_args()
     data = mrcfile.read(args.score_map)  # also read voxel_size
-    model = UNet3D(in_channels=1, out_channels=2)
+    model = PeakFinder()
     try:  # load model but remove state in case the state dict is from a DPP trained model
         model.load_state_dict(torch.load(args.model))
     except RuntimeError:

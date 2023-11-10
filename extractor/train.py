@@ -10,7 +10,7 @@ import logging
 import pathlib
 import argparse
 import os
-from extractor.models import UNet3D
+from extractor.models import UNet3D, PeakFinder
 from extractor.data import ScoreData
 from extractor.loss import TverskyLoss
 from tqdm import tqdm
@@ -63,6 +63,7 @@ def train_model(
         train_data_path: pathlib.Path,
         val_fraction: float,
         batch_size: int,
+        patch_size: int,
         loss_alpha: float,
         loss_beta: float,
         num_epochs: int,
@@ -75,13 +76,14 @@ def train_model(
     setup(rank, world_size)
 
     # Set model to train mode and move to device
-    model = UNet3D(in_channels=1, out_channels=2).to(rank)
+    # model = UNet3D(in_channels=1, out_channels=2).to(rank)
+    model = PeakFinder()
     model = DistributedDataParallel(model, device_ids=[rank])
 
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
-    loss_module = TverskyLoss(classes=2, alpha=loss_alpha, beta=loss_beta)
+    loss_module = TverskyLoss(classes=1, alpha=loss_alpha, beta=loss_beta)
 
-    dataset = ScoreData(train_data_path, patch_size=64, patch_overlap=32)
+    dataset = ScoreData(train_data_path, patch_size=patch_size, patch_overlap=patch_size // 2)
     train_dataset, validation_dataset = data.random_split(dataset, [1 - val_fraction, val_fraction])
 
     train_loader = prepare(train_dataset, rank, world_size, batch_size)
@@ -176,6 +178,7 @@ def entry_point():
     parser.add_argument('--output-dir', type=pathlib.Path, required=True)
     parser.add_argument('--log-file', type=pathlib.Path, required=True)
     parser.add_argument('--batch-size', type=int, required=False, default=8)
+    parser.add_argument('--patch-size', type=int, required=False, default=64)
     parser.add_argument('--loss-alpha', type=float, required=False, default=0.5)
     parser.add_argument('--loss-beta', type=float, required=False, default=0.5)
     parser.add_argument('--epochs', type=int, required=False, default=100)
