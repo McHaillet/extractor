@@ -193,6 +193,7 @@ def entry_point():
             args.train_data,
             args.val_fraction,
             args.batch_size,
+            args.patch_size,
             args.loss_alpha,
             args.loss_beta,
             args.epochs,
