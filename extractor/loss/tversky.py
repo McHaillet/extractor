@@ -19,7 +19,7 @@ def expand_as_one_hot(input, C, ignore_index=None):
 
 
 class TverskyLoss(nn.Module):
-    def __init__(self, classes: int, alpha: float = 0.5, beta: float = 0.5):
+    def __init__(self, alpha: float = 0.5, beta: float = 0.5, classes: int = 2):
         """
         Increasing beta weighs recall higher than precision, as beta controls the 
         penalty on FNs. This makes labeling a true positive as a negative more wrong. 
@@ -38,7 +38,7 @@ class TverskyLoss(nn.Module):
 
     def forward(self, y_pred, y_true):
 
-        y_true_onehot = expand_as_one_hot(y_true, C=self.cl).float() if self.cl != 1 else y_true.float()
+        y_true_onehot = expand_as_one_hot(y_true, C=self.cl).float()
 
         prob = F.softmax(y_pred, dim=1)
 

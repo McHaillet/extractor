@@ -81,7 +81,7 @@ def train_model(
     model = DistributedDataParallel(model, device_ids=[rank])
 
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
-    loss_module = TverskyLoss(classes=1, alpha=loss_alpha, beta=loss_beta)
+    loss_module = TverskyLoss(alpha=loss_alpha, beta=loss_beta)
 
     dataset = ScoreData(train_data_path, patch_size=patch_size, patch_overlap=patch_size // 2)
     train_dataset, validation_dataset = data.random_split(dataset, [1 - val_fraction, val_fraction])
