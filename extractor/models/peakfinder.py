@@ -2,7 +2,7 @@ import torch.nn as nn
 
 
 class PeakFinder(nn.Module):
-    def __init__(self, channels_input=2, channels_first=8, channels_second=4, channels_output=2, kernel_size=3):
+    def __init__(self, channels_input=1, channels_first=8, channels_second=4, channels_output=2, kernel_size=3):
         super(PeakFinder, self).__init__()
 
         layers = [
