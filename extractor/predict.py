@@ -34,6 +34,7 @@ def predict(model: torch.nn.Module, data: npt.NDArray[float], batch_size: int = 
     # print(tomo.shape)
     # preds = model(tomo)[0]
     # print(preds.shape)
+    data = (data - data.min()) / (data.max() - data.min())
 
     # does this return the patch size correctly?
     patch_size = 64
@@ -50,8 +51,7 @@ def predict(model: torch.nn.Module, data: npt.NDArray[float], batch_size: int = 
     pbar = tqdm(total=tiler.n_tiles)
 
     for tile_id, tile in tiler(data):
-
-        tile = (tile - tile.min()) / (tile.max() - tile.min())
+        
         batch = torch.from_numpy(tile).unsqueeze(dim=0).unsqueeze(dim=0).to(device)
         prob = F.softmax(model(batch), dim=1)
         merger.add(tile_id, prob[0, 1].to(torch.device('cpu')).numpy())
