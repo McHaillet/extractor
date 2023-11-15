@@ -39,7 +39,8 @@ class ScoreData(data.Dataset):
         self.score_volumes, self.label_volumes = [], []
         for tid in tomo_ids:
             with mrcfile.open(self.path.joinpath(tid + '_scores.mrc'), mode='r', permissive=True) as mrc:
-                self.score_volumes.append(mrc.data.astype(np.float32).copy())
+                scores = mrc.data.astype(np.float32).copy()
+            self.score_volumes.append((scores - scores.min()) / (scores.max() - scores.min()))
             with mrcfile.open(self.path.joinpath(tid + '_gt.mrc'), mode='r', permissive=True) as mrc:
                 self.label_volumes.append(mrc.data.astype(np.float32).copy())
 
