@@ -54,7 +54,7 @@ def predict(model: torch.nn.Module, data: npt.NDArray[float], batch_size: int = 
         tile = (tile - tile.min()) / (tile.max() - tile.min())
         batch = torch.from_numpy(tile).unsqueeze(dim=0).unsqueeze(dim=0).to(device)
         prob = F.softmax(model(batch), dim=1)
-        merger.add(tile_id, prob[0, 0].to(torch.device('cpu')).numpy())
+        merger.add(tile_id, prob[0, 1].to(torch.device('cpu')).numpy())
 
         pbar.update(1)
     pbar.close()
