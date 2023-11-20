@@ -2,17 +2,20 @@ import torch.nn as nn
 
 
 class PeakFinder(nn.Module):
-    def __init__(self, channels_input=1, channels_first=8, channels_second=4, channels_output=2, kernel_size=3):
+    def __init__(self, channels_input=1, channels_output=2):
         super(PeakFinder, self).__init__()
 
         layers = [
-            nn.Conv3d(channels_input, channels_first, kernel_size=(kernel_size, ) * 3, padding=1),
-            nn.BatchNorm3d(channels_first),
+            nn.Conv3d(channels_input, 8, kernel_size=(5, ) * 3, padding=2),
+            nn.BatchNorm3d(8),
             nn.ReLU(inplace=True),
-            nn.Conv3d(channels_first, channels_second, kernel_size=(kernel_size, ) * 3, padding=1),
-            nn.BatchNorm3d(channels_second),
+            nn.Conv3d(8, 8, kernel_size=(3, ) * 3, padding=1),
+            nn.BatchNorm3d(8),
             nn.ReLU(inplace=True),
-            nn.Conv3d(channels_second, channels_output, kernel_size=(1, ) * 3)
+            nn.Conv3d(8, 4, kernel_size=(3, ) * 3, padding=1),
+            nn.BatchNorm3d(4),
+            nn.ReLU(inplace=True),
+            nn.Conv3d(4, channels_output, kernel_size=(1, ) * 3)
         ]
 
         self.network = nn.Sequential(*layers)
