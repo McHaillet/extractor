@@ -9,10 +9,13 @@ class PeakFinder(nn.Module):
             nn.Conv3d(channels_input, 8, kernel_size=(5, ) * 3, padding=2),
             nn.BatchNorm3d(8),
             nn.ReLU(inplace=True),
-            nn.Conv3d(8, 4, kernel_size=(3, ) * 3, padding=1),
-            nn.BatchNorm3d(4),
+            nn.Conv3d(8, 8, kernel_size=(3, ) * 3, padding=1),
+            nn.BatchNorm3d(8),
             nn.ReLU(inplace=True),
-            nn.Conv3d(4, channels_output, kernel_size=(1, ) * 3)
+            nn.Conv3d(8, 8, kernel_size=(3, ) * 3, padding=1),
+            nn.BatchNorm3d(8),
+            nn.ReLU(inplace=True),
+            nn.Conv3d(8, channels_output, kernel_size=(1, ) * 3)
         ]
 
         self.network = nn.Sequential(*layers)
