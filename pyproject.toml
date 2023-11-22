@@ -18,6 +18,7 @@ dependencies = [
     "starfile",
     "tiler",
     "torch",
+    "focal_loss_torch",
 ]
 dynamic = ["version"]
 
