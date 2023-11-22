@@ -85,7 +85,9 @@ def train_model(
 
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
     # loss_module = TverskyLoss(alpha=loss_alpha, beta=loss_beta)
-    loss_module = FocalLoss(gamma=2, weights=torch.FloatTensor([1., 50000.]).to(rank))
+    # background class (0) get a weight of 1, peak annotations (1) get a weight of (N - M) / M
+    # N is on the order of 500x500x200 and M ~ 500 for a single tomogram, i.e. approx. 1e5
+    loss_module = FocalLoss(gamma=2, weights=torch.FloatTensor([1., 1e5]).to(rank))
 
     dataset = ScoreData(train_data_path, patch_size=patch_size, patch_overlap=patch_size // 2)
     train_dataset, validation_dataset = data.random_split(dataset, [1 - val_fraction, val_fraction])
@@ -116,7 +118,7 @@ def train_model(
             # calculate predictions
             preds = model(data_inputs)
 
-            # determine loss
+            # determine loss, use permute to put channel dim at end for FocalLoss
             loss = loss_module(
                 F.softmax(preds, dim=1).permute(0, 2, 3, 4, 1).contiguous(),
                 data_labels.permute(0, 2, 3, 4, 1).contiguous()
@@ -154,7 +156,7 @@ def train_model(
                 # calculate predictions
                 preds = model(data_inputs)
 
-                # determine loss
+                # determine loss, use permute to put channel dim at end for FocalLoss
                 loss = loss_module(
                     F.softmax(preds, dim=1).permute(0, 2, 3, 4, 1).contiguous(),
                     data_labels.permute(0, 2, 3, 4, 1).contiguous()
