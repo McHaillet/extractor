@@ -155,7 +155,10 @@ def train_model(
                 preds = model(data_inputs)
 
                 # determine loss
-                loss = loss_module(preds, data_labels)
+                loss = loss_module(
+                    F.softmax(preds, dim=1).permute(0, 2, 3, 4, 1),
+                    data_labels.permute(0, 2, 3, 4, 1)
+                )
 
                 validation_loss += loss.item()
 
