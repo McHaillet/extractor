@@ -85,7 +85,7 @@ def train_model(
 
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
     # loss_module = TverskyLoss(alpha=loss_alpha, beta=loss_beta)
-    loss_module = FocalLoss(gamma=2, weights=torch.FloatTensor([1., 50000.]))
+    loss_module = FocalLoss(gamma=2, weights=torch.FloatTensor([1., 50000.]).to(rank))
 
     dataset = ScoreData(train_data_path, patch_size=patch_size, patch_overlap=patch_size // 2)
     train_dataset, validation_dataset = data.random_split(dataset, [1 - val_fraction, val_fraction])
