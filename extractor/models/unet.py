@@ -10,7 +10,7 @@ from typing import Union
 # 3D reference U-Net implementation
 class UNet3D(nn.Module):
     def __init__(self, in_channels: int, out_channels: int,
-                 filters: tuple[int, ...] = (8, 8, 8),  # reduced params, before was: (64, 128, 256, 512, 1024)
+                 filters: tuple[int, ...] = (8, 16, 32),  # reduced params, before was: (64, 128, 256, 512, 1024)
                  dropout: Union[bool, float] = False):
         assert len(filters) > 2, 'filters must have at least 3 members'
 
