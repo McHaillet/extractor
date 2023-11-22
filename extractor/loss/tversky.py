@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 
 def expand_as_one_hot(input, C, ignore_index=None):
@@ -40,12 +39,10 @@ class TverskyLoss(nn.Module):
 
         y_true_onehot = expand_as_one_hot(y_true, C=self.cl).float()
 
-        prob = F.softmax(y_pred, dim=1)
-
         dims = (0, 2, 3, 4)
-        intersection = torch.sum(prob * y_true_onehot, dims)
-        fps = torch.sum(prob * (1 - y_true_onehot), dims)
-        fns = torch.sum((1 - prob) * y_true_onehot, dims)
+        intersection = torch.sum(y_pred * y_true_onehot, dims)
+        fps = torch.sum(y_pred * (1 - y_true_onehot), dims)
+        fns = torch.sum((1 - y_pred) * y_true_onehot, dims)
 
         num = intersection
         den = intersection + (self.alpha * fps) + (self.beta * fns)

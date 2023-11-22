@@ -5,6 +5,7 @@ import torch.distributed as dist
 import torch.multiprocessing as mp
 from torch.nn.parallel import DistributedDataParallel
 from focal_loss.focal_loss import FocalLoss
+import torch.nn.functional as F
 
 
 # other
@@ -116,7 +117,7 @@ def train_model(
             preds = model(data_inputs)
 
             # determine loss
-            loss = loss_module(preds, data_labels)
+            loss = loss_module(F.softmax(preds, dim=1), data_labels)
             
             # perform backpropagation
             loss.backward()
