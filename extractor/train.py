@@ -118,8 +118,8 @@ def train_model(
 
             # determine loss
             loss = loss_module(
-                F.softmax(preds, dim=1).permute(0, 2, 3, 4, 1),
-                data_labels.permute(0, 2, 3, 4, 1)
+                F.softmax(preds, dim=1).permute(0, 2, 3, 4, 1).contiguous(),
+                data_labels.permute(0, 2, 3, 4, 1).contiguous()
             )
             
             # perform backpropagation
@@ -156,8 +156,8 @@ def train_model(
 
                 # determine loss
                 loss = loss_module(
-                    F.softmax(preds, dim=1).permute(0, 2, 3, 4, 1),
-                    data_labels.permute(0, 2, 3, 4, 1)
+                    F.softmax(preds, dim=1).permute(0, 2, 3, 4, 1).contiguous(),
+                    data_labels.permute(0, 2, 3, 4, 1).contiguous()
                 )
 
                 validation_loss += loss.item()
