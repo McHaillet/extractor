@@ -4,7 +4,6 @@ import torch.utils.data as data
 import torch.distributed as dist
 import torch.multiprocessing as mp
 from torch.nn.parallel import DistributedDataParallel
-from focal_loss.focal_loss import FocalLoss
 import torch.nn.functional as F
 
 
@@ -15,7 +14,7 @@ import argparse
 import os
 from extractor.models import UNet3D, PeakFinder
 from extractor.data import ScoreData
-from extractor.loss import TverskyLoss
+from extractor.loss import TverskyLoss, FocalLoss
 from tqdm import tqdm
 
 
@@ -87,7 +86,7 @@ def train_model(
     # loss_module = TverskyLoss(alpha=loss_alpha, beta=loss_beta)
     # background class (0) get a weight of 1, peak annotations (1) get a weight of (N - M) / M
     # N is on the order of 500x500x200 and M ~ 500 for a single tomogram, i.e. approx. 1e5
-    loss_module = FocalLoss(gamma=2, weights=torch.FloatTensor([1. / (1e5 + 1), 1e5 / (1e5 + 1)]).to(rank))
+    loss_module = FocalLoss(gamma=2, alpha=[1. / (1e5 + 1), 1e5 / (1e5 + 1)])
 
     dataset = ScoreData(train_data_path, patch_size=patch_size, patch_overlap=patch_size // 2)
     train_dataset, validation_dataset = data.random_split(dataset, [1 - val_fraction, val_fraction])
@@ -120,8 +119,8 @@ def train_model(
 
             # determine loss, use permute to put channel dim at end for FocalLoss
             loss = loss_module(
-                F.softmax(preds, dim=1).permute(0, 2, 3, 4, 1).contiguous(),
-                data_labels.permute(0, 2, 3, 4, 1).contiguous()
+                preds,
+                data_labels,
             )
             
             # perform backpropagation
@@ -158,8 +157,8 @@ def train_model(
 
                 # determine loss, use permute to put channel dim at end for FocalLoss
                 loss = loss_module(
-                    F.softmax(preds, dim=1).permute(0, 2, 3, 4, 1).contiguous(),
-                    data_labels.permute(0, 2, 3, 4, 1).contiguous()
+                    preds,
+                    data_labels,
                 )
 
                 validation_loss += loss.item()
