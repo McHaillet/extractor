@@ -10,7 +10,7 @@ from typing import Union
 # 3D reference U-Net implementation
 class UNet3D(nn.Module):
     def __init__(self, in_channels: int, out_channels: int,
-                 filters: tuple[int, ...] = (8, 16, 32),  # reduced params, before was: (64, 128, 256, 512, 1024)
+                 filters: tuple[int, ...] = (16, 32, 64),  # reduced params, before was: (64, 128, 256, 512, 1024)
                  dropout: Union[bool, float] = False):
         assert len(filters) > 2, 'filters must have at least 3 members'
 
@@ -22,13 +22,13 @@ class UNet3D(nn.Module):
             out_channels = out_channels[0]
 
         # defining encoder layers
-        encoder_layers = []
+        encoder_layers = list()
         encoder_layers.append(First3D(in_channels, filters[0], filters[0], dropout=dropout))
         encoder_layers.extend([Encoder3D(filters[i], filters[i + 1], filters[i + 1], dropout=dropout)
                                for i in range(len(filters)-2)])
 
         # defining decoder layers
-        decoder_layers = []
+        decoder_layers = list()
         decoder_layers.extend([Decoder3D(2 * filters[i + 1], 2 * filters[i], 2 * filters[i], filters[i],
                                          dropout=dropout)
                                for i in reversed(range(len(filters)-2))])
@@ -89,7 +89,7 @@ class First3D(nn.Module):
         super(First3D, self).__init__()
 
         layers = [
-            nn.Conv3d(in_channels, middle_channels, kernel_size=(5,) * 3, padding=2),
+            nn.Conv3d(in_channels, middle_channels, kernel_size=(3,) * 3, padding=1),
             nn.BatchNorm3d(middle_channels),
             nn.ReLU(inplace=True),
             nn.Conv3d(middle_channels, out_channels, kernel_size=(3, ) * 3, padding=1),

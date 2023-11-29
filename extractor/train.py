@@ -78,15 +78,15 @@ def train_model(
     setup(rank, world_size)
 
     # Set model to train mode and move to device
-    # model = UNet3D(in_channels=1, out_channels=2).to(rank)
-    model = PeakFinder().to(rank)
+    model = UNet3D(in_channels=1, out_channels=2).to(rank)
+    # model = PeakFinder().to(rank)
     model = DistributedDataParallel(model, device_ids=[rank])
 
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
     # loss_module = TverskyLoss(alpha=loss_alpha, beta=loss_beta)
     # background class (0) get a weight of 1, peak annotations (1) get a weight of (N - M) / M
     # N is on the order of 500x500x200 and M ~ 500 for a single tomogram, i.e. approx. 1e5
-    loss_module = FocalLoss(gamma=1., alpha=[1., 1e5])
+    loss_module = FocalLoss(gamma=2., alpha=.25)
 
     dataset = ScoreData(train_data_path, patch_size=patch_size, patch_overlap=patch_size // 2)
     train_dataset, validation_dataset = data.random_split(dataset, [1 - val_fraction, val_fraction])
