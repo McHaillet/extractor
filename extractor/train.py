@@ -5,7 +5,8 @@ import torch.distributed as dist
 import torch.multiprocessing as mp
 from torch.nn.parallel import DistributedDataParallel
 import torch.nn.functional as F
-from monai.losses.dice import GeneralizedDiceLoss
+from monai.losses import GeneralizedDiceLoss
+from monai.losses import FocalLoss
 
 
 # other
@@ -15,7 +16,7 @@ import argparse
 import os
 from extractor.models import UNet3D, PeakFinder
 from extractor.data import ScoreData
-from extractor.loss import TverskyLoss, FocalLoss
+from extractor.loss import TverskyLoss
 from tqdm import tqdm
 
 
@@ -84,10 +85,6 @@ def train_model(
     model = DistributedDataParallel(model, device_ids=[rank])
 
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
-    # loss_module = TverskyLoss(alpha=loss_alpha, beta=loss_beta)
-    # background class (0) get a weight of 1, peak annotations (1) get a weight of (N - M) / M
-    # N is on the order of 500x500x200 and M ~ 500 for a single tomogram, i.e. approx. 1e5
-    # loss_module = FocalLoss(gamma=2., alpha=.25)
     loss_module = GeneralizedDiceLoss(
         include_background=True,
         to_onehot_y=True,
@@ -95,6 +92,16 @@ def train_model(
         reduction='mean',
         batch=True,
     )
+    # alternatively use FocalLoss
+    # loss_module = FocalLoss(
+    #     include_background=True,
+    #     to_onehot_y=True,
+    #     gamma=2.,
+    #     alpha=.25,
+    #     weight=[0.5, 25000],  # assuming n_voxels in tomogram ~ 5e7 and number of particles ~ 1000
+    #     reduction='mean',
+    #     use_softmax=True,
+    # )
 
     dataset = ScoreData(train_data_path, patch_size=patch_size, patch_overlap=patch_size // 2)
     train_dataset, validation_dataset = data.random_split(dataset, [1 - val_fraction, val_fraction])
