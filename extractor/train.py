@@ -92,8 +92,7 @@ def train_model(
         reduction='mean',
         batch=True,
     )
-    # alternatively use FocalLoss
-    # loss_module = FocalLoss(
+    # loss_module = FocalLoss(  # alternatively use focal_loss with weights from monai
     #     include_background=True,
     #     to_onehot_y=True,
     #     gamma=2.,
