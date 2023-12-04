@@ -85,22 +85,22 @@ def train_model(
     model = DistributedDataParallel(model, device_ids=[rank])
 
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
-    loss_module = GeneralizedDiceLoss(
-        include_background=True,
-        to_onehot_y=True,
-        softmax=True,
-        reduction='mean',
-        batch=True,
-    )
-    # loss_module = FocalLoss(  # alternatively use focal_loss with weights from monai
+    # loss_module = GeneralizedDiceLoss(
     #     include_background=True,
     #     to_onehot_y=True,
-    #     gamma=2.,
-    #     alpha=.25,
-    #     weight=[0.5, 25000],  # assuming n_voxels in tomogram ~ 5e7 and number of particles ~ 1000
+    #     softmax=True,
     #     reduction='mean',
-    #     use_softmax=True,
+    #     batch=True,
     # )
+    loss_module = FocalLoss(  # alternatively use focal_loss with weights from monai
+        include_background=True,
+        to_onehot_y=True,
+        gamma=2.,
+        alpha=.25,
+        weight=[0.5, 25000],  # assuming n_voxels in tomogram ~ 5e7 and number of particles ~ 1000
+        reduction='mean',
+        use_softmax=True,
+    )
 
     dataset = ScoreData(train_data_path, patch_size=patch_size, patch_overlap=patch_size // 2)
     train_dataset, validation_dataset = data.random_split(dataset, [1 - val_fraction, val_fraction])
