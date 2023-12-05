@@ -81,24 +81,16 @@ def train_model(
 
     # Set model to train mode and move to device
     model = UNet3D(in_channels=1, out_channels=2).to(rank)
-    # model = PeakFinder().to(rank)
     model = DistributedDataParallel(model, device_ids=[rank])
 
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
-    # loss_module = GeneralizedDiceLoss(
-    #     include_background=True,
-    #     to_onehot_y=True,
-    #     softmax=True,
-    #     reduction='mean',
-    #     batch=True,
-    # )
     loss_module = FocalLoss(  # alternatively use focal_loss with weights from monai
         include_background=True,
         to_onehot_y=True,
         gamma=2.,
         alpha=.25,
-        weight=[0.5, 25000],  # assuming n_voxels in tomogram ~ 5e7 and number of particles ~ 1000
-        reduction='mean',
+        weight=[0.5, 10000],  # assuming n_voxels in tomogram ~ 5e7 and number of particles ~ 1000
+        reduction='sum',
         use_softmax=True,
     )
 
