@@ -70,7 +70,6 @@ def annotate(ground_truth_positions, score_map, hit_tolerance_px=2, particle_rad
     ground_truth_mask[ground_truth_mask > 1] = 1
 
     score_map *= ground_truth_mask  # remove everything outside of ground truth tolerance
-    mrcfile.write('./test.mrc', score_map, voxel_size=1, overwrite=True)
     del ground_truth_mask
 
     ground_truth = np.zeros_like(score_map)
